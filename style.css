@@ -1,0 +1,10 @@
+
+/* style för elementen body i mitt html */
+body {
+    background-color: white; /* body's background color*/
+    width: 100%;    /* bredden procentuellt för att kunna ange hur stor del av sidan elementen ska ta */
+    max-width: 100%;  /* maximal width för olika elementen */
+    justify-content: center;  /* Placera saker som befinner sig inuti body elementen i centrum*/ 
+}
+
+

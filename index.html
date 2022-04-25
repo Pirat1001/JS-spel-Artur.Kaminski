@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<p>
+    <canvas id="canvas"></canvas>    <!-- Här skapar jag min canvas som jag kommer sedan att rendera saker på "rita" -->
+</p>
+<script>
+    // Här skapar jag min variabel som ansvarar för spelaren
+    var player = {
+        x: 200,     // spelarens x-koordinat
+        y: 120,     // spelarens y-koordinat
+        x_v: 0,     // Spelarens hastighet i x-koordinaten
+        y_v: 0,     // spelarens hastighet i y-koordinaten
+        jump : true,        // Skapar en boolean värde för spelarens hopp för att sedan kunna lägga på gravitationen ifall värdet ändras (fysik)
+        height: 20,         // Visuell höjd på spelaren (hur lång ska spelaren vara på canvas)
+        width: 20          // Visuell bredd på spelaren (hur bred ska spelaren vara på canvas)
+        };
+    // Här skapar jag en bool variabel som kan översättas som status på de olika pilarna(tangenter)
+    var keys = {
+        right: false,   // höger pilen
+        left: false,    // Vänster pilen
+        up: false,      // upp pilen
+        };
+    // Tom variabel som står för spelarens poäng och uppdateras i loopen
+    var myScore = 0;
+    // Friktionen och gravitationen för att skapa realistiska rörelser 
+    var gravity = 0.6;      // Tyngdkraft som drar på spelaren då hen befinner sig i luften
+    var friction = 0.7;     // Frictionen varar på spelaren för att hen inte ska kunna röra på sig för fort osv.
+    // Antal platformer (hur många platformer som finns)
+    var num = 16;
+    // Tomma listan som innehåller de olika platformernas värden t.ex. koordinater, storlek, position, etc.
+    var platforms = [];
+    // Funktionen som ritar upp själva canvas och ger den storlek
+    function rendercanvas(){
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, 720, 350);
+    }
+    // Funktionen som ritar spelaren på canvas
+    function renderplayer(){
+        ctx.fillStyle = "#00FFFF";       // Spelarens hex färg
+        ctx.fillRect((player.x)-20, (player.y)-20, player.width, player.height);      // Koordinaterna där spelaren ska ritas
+        }
+    // Funktionen som genererar platformer (skapar platformer) 
+    function createplat(){
+        for(i = 0; i < num; i++) {
+            platforms.push(
+                {
+                x: 180 * i + 180,     // här definieras platformernas x-koordinat, för att platformerna inte ska vara för långt ifrån varandra
+                y: 100 + i + Math.random() * 120 + 40,      // Här definieras platformernas y-koordinat genom att andända Math.random slumpar man fram ett värde mellan 120 och 40
+                width: 100,      // Visuell storlek på platformens bredd på canvas
+                height: 15       // Visuell storlek på platformens höjd på canvas
+                }
+            );
+        }
+        }
+    // Functionen som ritar platformerna på canvas
+    function renderplat(){
+        ctx.fillStyle = "#FF00FF";       // Färgen som platformerna ska vara fyllda med
+        ctx.fillRect(platforms[0].x, platforms[0].y, platforms[0].width, platforms[0].height);      // ctx.fillRect är helt enkelt förkortning av fyllrektangel, därefter anger jag vilka koordinater de olika platformerna har och dess storlek
+        ctx.fillRect(platforms[1].x, platforms[1].y, platforms[1].width,platforms[1]. height);
+        ctx.fillRect(platforms[2].x, platforms[2].y, platforms[2].width, platforms[2].height);
+        ctx.fillRect(platforms[3].x, platforms[3].y, platforms[3].width, platforms[3].height);
+        ctx.fillRect(platforms[4].x, platforms[4].y, platforms[4].width, platforms[4].height);
+        ctx.fillRect(platforms[5].x, platforms[5].y, platforms[5].width, platforms[5].height);
+        ctx.fillRect(platforms[6].x, platforms[6].y, platforms[6].width, platforms[6].height);
+        ctx.fillRect(platforms[7].x, platforms[7].y, platforms[7].width, platforms[7].height);
+        ctx.fillRect(platforms[8].x, platforms[8].y, platforms[8].width, platforms[8].height);
+        ctx.fillRect(platforms[9].x, platforms[9].y, platforms[9].width, platforms[9].height);
+        ctx.fillRect(platforms[10].x, platforms[10].y, platforms[10].width, platforms[10].height);
+        ctx.fillRect(platforms[11].x, platforms[11].y, platforms[11].width, platforms[11].height);
+        ctx.fillRect(platforms[12].x, platforms[12].y, platforms[12].width, platforms[12].height);
+        ctx.fillRect(platforms[13].x, platforms[13].y, platforms[13].width, platforms[13].height);
+        ctx.fillRect(platforms[14].x, platforms[14].y, platforms[14].width, platforms[14].height);
+        ctx.fillRect(platforms[15].x, platforms[15].y, platforms[15].width, platforms[15].height);
+    }
+    // Funktionen som ritar upp poängen på canvas så att spelaren kan se den under spelets gång
+    function drawScore() {
+        ctx.font = "30px Arial";       // font alltså utseendet på texten(textstil) Arial och att den ska ha storleken på 30px
+        ctx.fillStyle = "#FF00FF";      // Färgen som texten(poängen) ska fyllas med
+        ctx.fillText("Score: "+myScore, 40, 40);       // Här händer själva fyllandet med texten där jag plussar ihop sträng med den uppdaterande värdet myScore, samt koordinaten för att veta vart poängen ska ligga i canvas
+    }
+    // Funktionen som uppdaterar poängen 
+    function scoreUpdate() {
+        for(var c = 0; c < num; c+=1) {     // skapar en for-loop där jag skapar en tom variabel c som så länge den är mindre än antalet platformer ska den plussas på med 1
+            if(c > 1) {       // Skapar en if sats för att kunna lägga till en intervall på poängen
+                setInterval(function(){myScore += c}, 1000)     // Uppdaterar poängen med c värdet och lägger ett intervall att poängen ska börja visas efter att den var 1000
+            }
+        }
+    }
+    // Funktionen som kollar ifall någon av interaktiva tangenterna är nedtryckta
+    function keydown(e) {
+        // 37 är koden för tangenten (vänsterpil) för att göra den lättare att använda
+        if(e.keyCode == 37) {
+            keys.left = true;       // Ifall tangenten är nedtryckt kommer värdet som vi definierade tidigare i variabeln keys att ändras till True
+        }
+        // 38 är koden för tangenten (uppil)
+        if(e.keyCode == 38) {
+            if(player.jump == false) {      // Här ändras värdet till false eftersom player.jump innebär att spelaren kan inte hoppa just nu, därför blir värdet False
+                player.y_v = -12;       // player.y_v hastigheten för y_v ökar eftersom då man trycker pilen ska man i första millisekunden röra sig uppåt fort för att sedan börja falla 
+            }
+        }
+        // 39 är koden för tangenten (högerpil)
+        if(e.keyCode == 39) {
+            keys.right = true;
+        }
+    }
+    // Detta funktionen kallas då tangenten inte längre är nedtryckt
+    function keyup(e) {
+        if(e.keyCode == 37) {       // Här använder vi keycoden igen för att ändra värdet igen till false
+            keys.left = false;
+        }
+        if(e.keyCode == 38) {
+            if(player.y_v < -2) {   // Då spelaren inte längre hoppar alltså trycker ned uppil ska y_v(y_hastiheten) inte längre öka lika fort 
+            player.y_v = -3;
+            }
+        }
+        if(e.keyCode == 39) {
+            keys.right = false;
+        }
+    } 
+    // Funktionen kallas då spelaren dör (faller av platformen)
+    function death() {
+        ctx.fillText("GAME OVER", 340, 40);         // Skriver ut Stort text GAME OVER med koordinaterna x 340 och y 40
+        play = ctx.fillText("Play Again", 360, 100);        // Under GAME OVER texten skrivs ut texten Play Again med koordinaten x 360 och y 100
+        ctx.fillRect(310, 65, 5, 50);       // Design linjer bara för att göra play again mer synliga
+        ctx.fillRect(550, 65, 5, 50);
+    }
+    function loop() {       // Den eviga loopen som håller på hela spelet 
+        // Om spelaren inte hoppar ska frictionen att vara på spelaren (för att spelaren inte ska röra sig för fort "realistiskt")
+        if(player.jump == false) {
+            player.x_v *= friction;
+        } else {
+            // Annars ifall spelaren hoppar ska gravitation att vara på spelaren för att hen ska kunna falla ned igen
+            player.y_v += gravity;
+        }
+        player.jump = true;
+        if(keys.left) {             // Om vänsterpilen trycks ned ska hastigheten minska eftersom vi rör oss i negativa koordinater ska vi röra oss fortare fast negativt
+            player.x_v = -2.5;
+        }
+        if(keys.right) {      // Motsatsen till vänster pilen, vi rör oss åt höger därför ska våran x koordinat öka hastigare
+            player.x_v = 2.5;   
+        }
+        // Här kopplar vi ihop spelarens x och y koordinat med deras x_velocity och y_velocity för att uppdatera spelarens position
+        player.y += player.y_v;
+        player.x += player.x_v;
+        
+        // Koden som kontrollerar kollision med platformerna 
+        let i = -1;     // Skapar en variabel i med värdet -1
+        if(player.x === platforms[0].x && player.y === platforms[0].y){         // Om spelarens x-koordinat = första platformens x-koordinat och spelarens y-koordinat = första platformens y koordinat
+            player.x = platforms[0].x;      // Ska spelarens x-koordinat = platformens x-koordinat
+            player.y = platforms[0].y;      // Ska spelarens y-koordinat = platformens y-koordinat
+        }
+        if(platforms[0].x < player.x && player.x < platforms[0].x + platforms[0].width && // Om platformens x-koordinat < spelarens x-koordinat och spelarens x-koordinat är mindre än platformens x-koorinat+platformens-bredd
+        platforms[0].y < player.y && player.y < platforms[0].y + platforms[0].height){ // och om platformens y-koordinat < spelarens y-koordinat och spelarens y-koordiant < platformens y-koordinat + platformens-höjd 
+            i = 0;      // Variabeln i ska ha värdet 0
+        }
+        if(platforms[1].x < player.x && player.x < platforms[1].x + platforms[1].width &&
+        platforms[1].y < player.y && player.y < platforms[1].y + platforms[1].height){
+            i = 1;                                                                          //         -------OO----------
+        }
+        if(platforms[2].x < player.x && player.x < platforms[2].x + platforms[2].width && platforms[2].y < player.y && player.y < platforms[2].y + platforms[2].height){
+            i = 2;
+        }
+        if(platforms[3].x < player.x && player.x < platforms[3].x + platforms[3].width && platforms[3].y < player.y && player.y < platforms[3].y + platforms[3].height){
+            i = 3;
+        }
+        if(platforms[4].x < player.x && player.x < platforms[4].x + platforms[4].width &&
+        platforms[4].y < player.y && player.y < platforms[4].y + platforms[4].height){
+            i = 4;
+        }
+        if(platforms[5].x < player.x && player.x < platforms[5].x + platforms[5].width &&
+        platforms[5].y < player.y && player.y < platforms[5].y + platforms[5].height){
+            i = 5;
+        }
+        if(platforms[6].x < player.x && player.x < platforms[6].x + platforms[6].width &&
+        platforms[6].y < player.y && player.y < platforms[6].y + platforms[6].height){
+            i = 6;
+        }
+        if(platforms[7].x < player.x && player.x < platforms[7].x + platforms[7].width &&
+        platforms[7].y < player.y && player.y < platforms[7].y + platforms[7].height){
+            i = 7;
+        }
+        if(platforms[8].x < player.x && player.x < platforms[8].x + platforms[8].width &&
+        platforms[8].y < player.y && player.y < platforms[8].y + platforms[8].height){
+            i = 8;
+        }
+        if(platforms[9].x < player.x && player.x < platforms[9].x + platforms[9].width &&
+        platforms[9].y < player.y && player.y < platforms[9].y + platforms[9].height){
+            i = 9;
+        }
+        if(platforms[10].x < player.x && player.x < platforms[10].x + platforms[10].width &&
+        platforms[10].y < player.y && player.y < platforms[10].y + platforms[10].height){
+            i = 10;
+        }
+        if(platforms[11].x < player.x && player.x < platforms[11].x + platforms[11].width &&
+        platforms[11].y < player.y && player.y < platforms[11].y + platforms[11].height){
+            i = 11;
+        }
+        if(platforms[12].x < player.x && player.x < platforms[12].x + platforms[12].width &&
+        platforms[12].y < player.y && player.y < platforms[12].y + platforms[12].height){
+            i = 12;
+        }
+        if(platforms[13].x < player.x && player.x < platforms[13].x + platforms[13].width &&
+        platforms[13].y < player.y && player.y < platforms[13].y + platforms[13].height){
+            i = 13;
+        }
+        if(platforms[13].x < player.x && player.x < platforms[13].x + platforms[13].width &&
+        platforms[13].y < player.y && player.y < platforms[13].y + platforms[13].height){
+            i = 13;
+        }
+        if(platforms[14].x < player.x && player.x < platforms[14].x + platforms[14].width &&
+        platforms[14].y < player.y && player.y < platforms[14].y + platforms[14].height){
+            i = 14;
+        }
+        if(platforms[15].x < player.x && player.x < platforms[15].x + platforms[15].width &&
+        platforms[15].y < player.y && player.y < platforms[15].y + platforms[15].height){
+            i = 15;
+        }
+        if (i > -1){        // Ifall i variabeln är större än -1:
+            player.jump = false;        // Ska spelarens jump ha värdet false alltså spelaren hoppar inte
+            player.y = platforms[i].y;      // och spelarens y-koordinat = platformens[i] y-koordinat
+        }
+        // Om spelarens y-koordinat är större än 355 kommer death() funktionen att kallas och spel-loopen kommer att brutas
+        if (player.y > 355) {
+            death();
+            return
+        }
+        // Rörelser av platformerna för att skapa en känsla av att man rör sig framåt(ändrar platformernas x koordinat)
+        platforms[0].x += -3;
+        platforms[1].x += -3;
+        platforms[2].x += -3;
+        platforms[3].x += -3;
+        platforms[4].x += -3;
+        platforms[5].x += -3;
+        platforms[6].x += -3;
+        platforms[7].x += -3;
+        platforms[8].x += -3;
+        platforms[9].x += -3;
+        platforms[10].x += -3;
+        platforms[11].x += -3;
+        platforms[12].x += -3;
+        platforms[13].x += -3;
+        platforms[14].x += -3;
+        platforms[15].x += -3;
+        // Ritar upp de olika sakerna i ordningsföljd för att få spelet att funka, först canvas, därefter spelaren, platformer, poäng och uppdatering av poängen
+        rendercanvas();
+        renderplayer();
+        renderplat();
+        drawScore();
+        scoreUpdate();
+    }
+    canvas=document.getElementById("canvas");       // Får tag på canvas genom javascript alltså getElementById "canvas"
+    ctx=canvas.getContext("2d");        // 2d spel(dimension)
+    ctx.canvas.height = 350;        // storleken höjden på canvas
+    ctx.canvas.width = 720;         // storleken bredden på canvas
+    createplat();       // kallar på funktionen som skapar platformerna
+    // Lägger till eventlisteners som aktivt lyssnar på ifall spelaren trycker ned tangeter
+    document.addEventListener("keydown",keydown);
+    document.addEventListener("keyup",keyup);
+    setInterval(loop,22);       // En intervall som gör att spelet börjar 22 millisekunder efter att sidan laddas in
+</script>
+<body>
+</body>
+</html>
